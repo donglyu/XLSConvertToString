@@ -106,4 +106,8 @@ en,es,de
 
 ## License
 
-Add your preferred license before publishing if you want the repository to be fully open-source ready.
+This project is licensed under the MIT License. See [LICENSE](./LICENSE).
+
+Bundled third-party code may use its own license terms:
+
+- `XLSConvertToString/Vendor/libxls` is distributed under its included license at `XLSConvertToString/Vendor/libxls/LICENSE`.

@@ -8,12 +8,11 @@
 
 /* Begin PBXBuildFile section */
 		0801913C2432DD4F00026889 /* Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = 0801913B2432DD4F00026889 /* Assets.xcassets */; };
-		0879FFEF2432EE1C00E2B739 /* libDHxlsReader.a in Frameworks */ = {isa = PBXBuildFile; fileRef = 0879FFEE2432EE1C00E2B739 /* libDHxlsReader.a */; };
+		0879FFF32432F6A800E2B739 /* libiconv.tbd in Frameworks */ = {isa = PBXBuildFile; fileRef = 0879FFF22432F6A800E2B739 /* libiconv.tbd */; };
 		70A4AA112E343F8300A1B2C3 /* XLSConvertToStringApp.swift in Sources */ = {isa = PBXBuildFile; fileRef = 70A4AA0E2E343F8300A1B2C3 /* XLSConvertToStringApp.swift */; };
 		70A4AA122E34470000A1B2C3 /* LocalizationConversionService.swift in Sources */ = {isa = PBXBuildFile; fileRef = 70A4AA132E34470000A1B2C3 /* LocalizationConversionService.swift */; };
 		70A4AA142E345D7D00A1B2C3 /* MainContentView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 70A4AA152E345D7D00A1B2C3 /* MainContentView.swift */; };
 		70A4AA162E34A9C000A1B2C3 /* UnusedLocalizationKeysService.swift in Sources */ = {isa = PBXBuildFile; fileRef = 70A4AA172E34A9C000A1B2C3 /* UnusedLocalizationKeysService.swift */; };
-		0879FFF32432F6A800E2B739 /* libiconv.tbd in Frameworks */ = {isa = PBXBuildFile; fileRef = 0879FFF22432F6A800E2B739 /* libiconv.tbd */; };
 		70A4AA182E35000000A1B2C3 /* endian.c in Sources */ = {isa = PBXBuildFile; fileRef = 70A4AA192E35000000A1B2C3 /* endian.c */; };
 		70A4AA1A2E35000000A1B2C3 /* locale.c in Sources */ = {isa = PBXBuildFile; fileRef = 70A4AA1B2E35000000A1B2C3 /* locale.c */; };
 		70A4AA1C2E35000000A1B2C3 /* ole.c in Sources */ = {isa = PBXBuildFile; fileRef = 70A4AA1D2E35000000A1B2C3 /* ole.c */; };
@@ -22,7 +21,7 @@
 /* End PBXBuildFile section */
 
 /* Begin PBXFileReference section */
-		080191322432DD4A00026889 /* EPAL Localization Tool.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = "EPAL Localization Tool.app"; sourceTree = BUILT_PRODUCTS_DIR; };
+		080191322432DD4A00026889 /* Localization Tool.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = "Localization Tool.app"; sourceTree = BUILT_PRODUCTS_DIR; };
 		0801913B2432DD4F00026889 /* Assets.xcassets */ = {isa = PBXFileReference; lastKnownFileType = folder.assetcatalog; path = Assets.xcassets; sourceTree = "<group>"; };
 		080191402432DD4F00026889 /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist.xml; path = Info.plist; sourceTree = "<group>"; };
 		080191432432DD4F00026889 /* XLSConvertToString.entitlements */ = {isa = PBXFileReference; lastKnownFileType = text.plist.entitlements; path = XLSConvertToString.entitlements; sourceTree = "<group>"; };
@@ -40,7 +39,6 @@
 		70A4AA1D2E35000000A1B2C3 /* ole.c */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.c; path = ole.c; sourceTree = "<group>"; };
 		70A4AA1F2E35000000A1B2C3 /* xls.c */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.c; path = xls.c; sourceTree = "<group>"; };
 		70A4AA212E35000000A1B2C3 /* xlstool.c */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.c; path = xlstool.c; sourceTree = "<group>"; };
-		70A4AA222E35000000A1B2C3 /* Vendor */ = {isa = PBXFileReference; lastKnownFileType = folder; path = Vendor; sourceTree = "<group>"; };
 		70A4AA232E35000000A1B2C3 /* config.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = config.h; sourceTree = "<group>"; };
 		70A4AA242E35000000A1B2C3 /* xls.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = xls.h; sourceTree = "<group>"; };
 /* End PBXFileReference section */
@@ -69,7 +67,7 @@
 		080191332432DD4A00026889 /* Products */ = {
 			isa = PBXGroup;
 			children = (
-				080191322432DD4A00026889 /* EPAL Localization Tool.app */,
+				080191322432DD4A00026889 /* Localization Tool.app */,
 			);
 			name = Products;
 			sourceTree = "<group>";
@@ -134,13 +132,6 @@
 			name = Frameworks;
 			sourceTree = "<group>";
 		};
-		70C86FF129A5FD790089856A /* ViewModel */ = {
-			isa = PBXGroup;
-			children = (
-			);
-			path = ViewModel;
-			sourceTree = "<group>";
-		};
 		70A4AA252E35000000A1B2C3 /* Vendor */ = {
 			isa = PBXGroup;
 			children = (
@@ -187,6 +178,13 @@
 			path = libxls;
 			sourceTree = "<group>";
 		};
+		70C86FF129A5FD790089856A /* ViewModel */ = {
+			isa = PBXGroup;
+			children = (
+			);
+			path = ViewModel;
+			sourceTree = "<group>";
+		};
 /* End PBXGroup section */
 
 /* Begin PBXNativeTarget section */
@@ -204,7 +202,7 @@
 			);
 			name = XLSConvertToString;
 			productName = XLSConvertToString;
-			productReference = 080191322432DD4A00026889 /* EPAL Localization Tool.app */;
+			productReference = 080191322432DD4A00026889 /* Localization Tool.app */;
 			productType = "com.apple.product-type.application";
 		};
 /* End PBXNativeTarget section */
@@ -407,7 +405,7 @@
 				MACOSX_DEPLOYMENT_TARGET = 15.0;
 				MARKETING_VERSION = 1.0;
 				PRODUCT_BUNDLE_IDENTIFIER = io.github.xlsconverttostring;
-				PRODUCT_NAME = "EPAL Localization Tool";
+				PRODUCT_NAME = "Localization Tool";
 				SWIFT_OBJC_BRIDGING_HEADER = "XLSConvertToString/XLSConvertToString-Bridging-Header.h";
 				SWIFT_VERSION = 5.0;
 			};
@@ -441,7 +439,7 @@
 				MACOSX_DEPLOYMENT_TARGET = 15.0;
 				MARKETING_VERSION = 1.0;
 				PRODUCT_BUNDLE_IDENTIFIER = io.github.xlsconverttostring;
-				PRODUCT_NAME = "EPAL Localization Tool";
+				PRODUCT_NAME = "Localization Tool";
 				SWIFT_OBJC_BRIDGING_HEADER = "XLSConvertToString/XLSConvertToString-Bridging-Header.h";
 				SWIFT_VERSION = 5.0;
 			};
