@@ -1,0 +1,8 @@
+
+"Language Key" = "Turkish";
+"host_tips_msg" = "Takımın oluşturuldu, şu anda ön sayfada görüntüleniyor. Oyuncular yolda. Arkadaşlarını da Takımına katılmaya davet edebilirsin.";
+"alert_title_double_check" = "Gönderin kaydedilmeyecek";
+"comment_score_desc_x" = "Bu hizmet için toplam değerlendirme puanın %@";
+"unpaid_desc_x" = "Ödeme yapılmazsa siparişin %@ içinde iptal edilecek";
+"tips_no_network" = "Ağ bağlantın sabit değil, lütfen yeniden dene";
+"toast_img_error_upload" = "Görüntün yüklenemedi, lütfen yeniden dene";

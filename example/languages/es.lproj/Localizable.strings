@@ -1,0 +1,8 @@
+
+"Language Key" = "Spanish";
+"host_tips_msg" = "Su Equipo ha sido creado, y ahora se está mostrando en la página de inicio. Jugadores en camino. También puede invitar a sus amigos a unirse a su Equipo.";
+"alert_title_double_check" = "Su publicación no se guardará";
+"comment_score_desc_x" = "Su calificación general de evaluación para este servicio es %@";
+"unpaid_desc_x" = "Su pedido se cancelará en %@ si no se paga";
+"tips_no_network" = "Red inestable, vuelva a intentar";
+"toast_img_error_upload" = "No se pudo cargar su imagen, intente de nuevo";

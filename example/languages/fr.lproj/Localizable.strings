@@ -1,0 +1,8 @@
+
+"Language Key" = "French";
+"host_tips_msg" = "Votre équipe a été bien créée, elle est maintenant affichée sur la page d’accueil. Les joueurs sont en route. Vous pouvez également inviter vos amis à se joindre à votre équipe.";
+"alert_title_double_check" = "Votre post ne sera pas sauvegardé";
+"comment_score_desc_x" = "Votre note globale pour ce service est de %@";
+"unpaid_desc_x" = "Votre commande non payée sera annulée dans %@";
+"tips_no_network" = "Votre connexion internet est instable, merci de réessayer";
+"toast_img_error_upload" = "Le chargement de votre image a échoué, merci de réessayer";
