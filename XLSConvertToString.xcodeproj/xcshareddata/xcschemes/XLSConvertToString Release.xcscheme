@@ -15,7 +15,7 @@
             <BuildableReference
                BuildableIdentifier = "primary"
                BlueprintIdentifier = "080191312432DD4A00026889"
-               BuildableName = "EPAL Localization Tool.app"
+               BuildableName = "Localization Tool.app"
                BlueprintName = "XLSConvertToString"
                ReferencedContainer = "container:XLSConvertToString.xcodeproj">
             </BuildableReference>
@@ -45,7 +45,7 @@
          <BuildableReference
             BuildableIdentifier = "primary"
             BlueprintIdentifier = "080191312432DD4A00026889"
-            BuildableName = "EPAL Localization Tool.app"
+            BuildableName = "Localization Tool.app"
             BlueprintName = "XLSConvertToString"
             ReferencedContainer = "container:XLSConvertToString.xcodeproj">
          </BuildableReference>
@@ -62,7 +62,7 @@
          <BuildableReference
             BuildableIdentifier = "primary"
             BlueprintIdentifier = "080191312432DD4A00026889"
-            BuildableName = "EPAL Localization Tool.app"
+            BuildableName = "Localization Tool.app"
             BlueprintName = "XLSConvertToString"
             ReferencedContainer = "container:XLSConvertToString.xcodeproj">
          </BuildableReference>

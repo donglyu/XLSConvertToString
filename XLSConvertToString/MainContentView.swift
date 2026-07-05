@@ -24,6 +24,7 @@ struct MainContentView: View {
 
     @State private var alertMessage: AlertMessage?
     @State private var isShowingUnusedKeysSheet = false
+    @State private var conversionStatusMessage = ""
 
     private let conversionService = LocalizationConversionService()
     private let defaultLanguageKeys = "en,es,de,fr,tr,it,pt-BR"
@@ -75,9 +76,15 @@ struct MainContentView: View {
                     isShowingUnusedKeysSheet = true
                 }
             }
+
+            if !conversionStatusMessage.isEmpty {
+                Text(conversionStatusMessage)
+                    .font(.system(size: 12, weight: .medium))
+                    .foregroundStyle(.green)
+            }
         }
         .padding(32)
-        .frame(minWidth: 680, minHeight: 420, alignment: .topLeading)
+        .frame(minWidth: 680, minHeight: 460, alignment: .topLeading)
         .background(WindowConfigurationView())
         .sheet(isPresented: $isShowingUnusedKeysSheet) {
             UnusedKeysSheet()
@@ -115,6 +122,8 @@ struct MainContentView: View {
     }
 
     private func convert() {
+        conversionStatusMessage = ""
+
         guard !excelPath.isEmpty else {
             showAlert("Please select an xls file.")
             return
@@ -138,7 +147,7 @@ struct MainContentView: View {
                 projectLocalizationDirectory: projectPath.isEmpty ? nil : projectPath,
                 languageKeys: languageKeys
             )
-            showAlert("Completed.")
+            conversionStatusMessage = "Convert completed."
         } catch {
             showAlert(error.localizedDescription)
         }
