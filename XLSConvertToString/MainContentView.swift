@@ -28,6 +28,11 @@ struct MainContentView: View {
 
     private let conversionService = LocalizationConversionService()
     private let defaultLanguageKeys = "en,es,de,fr,tr,it,pt-BR"
+    private let statusTimeFormatter: DateFormatter = {
+        let formatter = DateFormatter()
+        formatter.dateFormat = "HH:mm:ss"
+        return formatter
+    }()
 
     var body: some View {
         VStack(alignment: .leading, spacing: 20) {
@@ -147,7 +152,8 @@ struct MainContentView: View {
                 projectLocalizationDirectory: projectPath.isEmpty ? nil : projectPath,
                 languageKeys: languageKeys
             )
-            conversionStatusMessage = "Convert completed."
+            let completedAt = statusTimeFormatter.string(from: Date())
+            conversionStatusMessage = "Convert completed at \(completedAt)."
         } catch {
             showAlert(error.localizedDescription)
         }
