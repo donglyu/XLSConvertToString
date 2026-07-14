@@ -3,6 +3,107 @@ import Foundation
 @objc enum LocalizationConversionErrorCode: Int {
     case invalidExcelFile = 1
     case worksheetParsingFailed = 2
+    case invalidCSVFile = 3
+}
+
+enum CSVTableReaderError: LocalizedError {
+    case malformedCSV
+    case unreadableFile
+
+    var errorDescription: String? {
+        switch self {
+        case .malformedCSV:
+            return "The CSV file is malformed: a quoted field is not terminated correctly."
+        case .unreadableFile:
+            return "Unable to read the CSV file as UTF-8 text."
+        }
+    }
+}
+
+/// Parses RFC 4180-style CSV while preserving quoted commas, newlines, and escaped quotes.
+struct CSVTableReader {
+    func read(from path: String) throws -> [[String]] {
+        guard var text = try? String(contentsOfFile: path, encoding: .utf8) else {
+            throw CSVTableReaderError.unreadableFile
+        }
+
+        if text.first == "\u{FEFF}" {
+            text.removeFirst()
+        }
+
+        var rows: [[String]] = []
+        var row: [String] = []
+        var field = ""
+        var isQuoted = false
+        var justClosedQuote = false
+        var index = text.startIndex
+
+        while index < text.endIndex {
+            let character = text[index]
+            let nextIndex = text.index(after: index)
+            let next = nextIndex < text.endIndex ? text[nextIndex] : nil
+
+            if isQuoted {
+                if character == "\"" {
+                    if next == "\"" {
+                        field.append("\"")
+                        index = text.index(after: nextIndex)
+                    } else {
+                        isQuoted = false
+                        justClosedQuote = true
+                        index = nextIndex
+                    }
+                } else {
+                    field.append(character)
+                    index = nextIndex
+                }
+                continue
+            }
+
+            switch character {
+            case "\"" where field.isEmpty:
+                isQuoted = true
+            case ",":
+                row.append(field)
+                field = ""
+                justClosedQuote = false
+            case "\n":
+                row.append(field)
+                rows.append(row)
+                row = []
+                field = ""
+                justClosedQuote = false
+            case "\r\n":
+                row.append(field)
+                rows.append(row)
+                row = []
+                field = ""
+                justClosedQuote = false
+            case "\r":
+                row.append(field)
+                rows.append(row)
+                row = []
+                field = ""
+                justClosedQuote = false
+            default:
+                if justClosedQuote {
+                    throw CSVTableReaderError.malformedCSV
+                }
+                field.append(character)
+            }
+            index = nextIndex
+        }
+
+        guard !isQuoted else {
+            throw CSVTableReaderError.malformedCSV
+        }
+
+        if !field.isEmpty || !row.isEmpty {
+            row.append(field)
+            rows.append(row)
+        }
+        return rows
+    }
 }
 
 @objcMembers
@@ -13,6 +114,16 @@ final class LocalizationConversionService: NSObject {
         projectLocalizationDirectory: String?,
         languageKeys: [String]
     ) throws {
+        if URL(fileURLWithPath: excelPath).pathExtension.caseInsensitiveCompare("csv") == .orderedSame {
+            try convertCSV(
+                csvPath: excelPath,
+                stringOutputDirectory: stringOutputDirectory,
+                projectLocalizationDirectory: projectLocalizationDirectory,
+                languageKeys: languageKeys
+            )
+            return
+        }
+
         var openError = LIBXLS_OK
 
         guard let workbook = xls_open_file(excelPath, "UTF-8", &openError) else {
@@ -65,6 +176,20 @@ final class LocalizationConversionService: NSObject {
             }
         }
 
+        try writeLocalizedStrings(
+            localizedStrings,
+            stringOutputDirectory: stringOutputDirectory,
+            projectLocalizationDirectory: projectLocalizationDirectory,
+            languageKeys: languageKeys
+        )
+    }
+
+    private func writeLocalizedStrings(
+        _ localizedStrings: [NSMutableString],
+        stringOutputDirectory: String?,
+        projectLocalizationDirectory: String?,
+        languageKeys: [String]
+    ) throws {
         for (index, content) in localizedStrings.enumerated() {
             guard index < languageKeys.count else {
                 continue
@@ -87,6 +212,43 @@ final class LocalizationConversionService: NSObject {
                 try write(content: content as String, to: filePath)
             }
         }
+    }
+
+    private func convertCSV(
+        csvPath: String,
+        stringOutputDirectory: String?,
+        projectLocalizationDirectory: String?,
+        languageKeys: [String]
+    ) throws {
+        let rows: [[String]]
+        do {
+            rows = try CSVTableReader().read(from: csvPath)
+        } catch {
+            throw conversionError(code: .invalidCSVFile, description: error.localizedDescription)
+        }
+
+        var localizedStrings: [NSMutableString] = []
+        for row in rows {
+            guard let key = row[safe: 0], !key.isEmpty else { continue }
+
+            for columnIndex in 2..<row.count {
+                if columnIndex - 1 > localizedStrings.count {
+                    localizedStrings.append(NSMutableString())
+                }
+                guard !row[columnIndex].isEmpty else { continue }
+
+                let sanitizedValue = sanitize(row[columnIndex])
+                localizedStrings[columnIndex - 2].append("\n\"\(key)\" = ")
+                localizedStrings[columnIndex - 2].append("\"\(sanitizedValue)\";")
+            }
+        }
+
+        try writeLocalizedStrings(
+            localizedStrings,
+            stringOutputDirectory: stringOutputDirectory,
+            projectLocalizationDirectory: projectLocalizationDirectory,
+            languageKeys: languageKeys
+        )
     }
 
     private func write(content: String, to path: String) throws {
@@ -158,5 +320,11 @@ final class LocalizationConversionService: NSObject {
             code: code.rawValue,
             userInfo: [NSLocalizedDescriptionKey: description]
         )
+    }
+}
+
+private extension Array {
+    subscript(safe index: Index) -> Element? {
+        indices.contains(index) ? self[index] : nil
     }
 }

@@ -7,12 +7,15 @@ struct UnusedLocalizationKeysResult {
 
 enum UnusedLocalizationKeysError: LocalizedError {
     case invalidXLS
+    case invalidCSV
     case noKeysFound
 
     var errorDescription: String? {
         switch self {
         case .invalidXLS:
             return "Unable to read the XLS file."
+        case .invalidCSV:
+            return "Unable to read the CSV file."
         case .noKeysFound:
             return "No keys were found in the XLS file."
         }
@@ -26,6 +29,15 @@ final class UnusedLocalizationKeysService {
         ignoreComments: Bool,
         progress: @escaping @Sendable (_ scannedCount: Int, _ totalCount: Int, _ remainingCount: Int) -> Void
     ) throws -> UnusedLocalizationKeysResult {
+        if URL(fileURLWithPath: xlsPath).pathExtension.caseInsensitiveCompare("csv") == .orderedSame {
+            return try findUnusedKeysInCSV(
+                projectPath: projectPath,
+                csvPath: xlsPath,
+                ignoreComments: ignoreComments,
+                progress: progress
+            )
+        }
+
         var openError = LIBXLS_OK
 
         guard let workbook = xls_open_file(xlsPath, "UTF-8", &openError) else {
@@ -57,6 +69,20 @@ final class UnusedLocalizationKeysService {
             throw UnusedLocalizationKeysError.noKeysFound
         }
 
+        return scan(
+            projectPath: projectPath,
+            allKeys: allKeys,
+            ignoreComments: ignoreComments,
+            progress: progress
+        )
+    }
+
+    private func scan(
+        projectPath: String,
+        allKeys: OrderedSet<String>,
+        ignoreComments: Bool,
+        progress: @escaping @Sendable (_ scannedCount: Int, _ totalCount: Int, _ remainingCount: Int) -> Void
+    ) -> UnusedLocalizationKeysResult {
         let candidateFiles = candidateSourceFiles(at: projectPath)
         var remainingKeys = allKeys
         var scannedCount = 0
@@ -98,6 +124,34 @@ final class UnusedLocalizationKeysService {
         return UnusedLocalizationKeysResult(
             status: "Completed",
             resultText: "Found \(remainingKeys.count) unused keys:\n\n\(body)\n"
+        )
+    }
+
+    private func findUnusedKeysInCSV(
+        projectPath: String,
+        csvPath: String,
+        ignoreComments: Bool,
+        progress: @escaping @Sendable (_ scannedCount: Int, _ totalCount: Int, _ remainingCount: Int) -> Void
+    ) throws -> UnusedLocalizationKeysResult {
+        let rows: [[String]]
+        do {
+            rows = try CSVTableReader().read(from: csvPath)
+        } catch {
+            throw UnusedLocalizationKeysError.invalidCSV
+        }
+
+        var allKeys = OrderedSet<String>()
+        for row in rows.dropFirst() {
+            guard let key = row.first, !key.isEmpty else { continue }
+            allKeys.append(key)
+        }
+        guard !allKeys.isEmpty else { throw UnusedLocalizationKeysError.noKeysFound }
+
+        return scan(
+            projectPath: projectPath,
+            allKeys: allKeys,
+            ignoreComments: ignoreComments,
+            progress: progress
         )
     }
 

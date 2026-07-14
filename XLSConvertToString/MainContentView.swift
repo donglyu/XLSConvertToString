@@ -11,6 +11,11 @@ private enum PreferenceKeys {
     static let unusedXLSPath = "kUnuseXLSPathKey"
 }
 
+private let supportedSpreadsheetTypes: [UTType] = [
+    .spreadsheet,
+    UTType(filenameExtension: "csv")!
+]
+
 private struct AlertMessage: Identifiable {
     let id = UUID()
     let text: String
@@ -33,17 +38,24 @@ struct MainContentView: View {
         formatter.dateFormat = "HH:mm:ss"
         return formatter
     }()
+    private let archiveTimeFormatter: DateFormatter = {
+        let formatter = DateFormatter()
+        formatter.locale = Locale(identifier: "en_US_POSIX")
+        formatter.dateFormat = "yyyyMMdd-HHmmss"
+        return formatter
+    }()
 
     var body: some View {
         VStack(alignment: .leading, spacing: 20) {
-            Text("Export XLS to .strings")
+            Text("Export Spreadsheet to .strings")
                 .font(.system(size: 22, weight: .bold))
 
             pathSection(
-                title: "Excel Path (.xls):",
+                title: "Spreadsheet File (.xls or .csv):",
                 value: excelPath,
                 selectAction: selectExcelFile,
-                revealAction: openExcelLocation
+                revealAction: openExcelLocation,
+                errorMessage: inputFileIsMissing ? "File not found" : nil
             )
 
             pathSection(
@@ -109,10 +121,19 @@ struct MainContentView: View {
         title: String,
         value: String,
         selectAction: @escaping () -> Void,
-        revealAction: @escaping () -> Void
+        revealAction: @escaping () -> Void,
+        errorMessage: String? = nil
     ) -> some View {
         VStack(alignment: .leading, spacing: 8) {
-            Text(title)
+            HStack(spacing: 6) {
+                Text(title)
+
+                if let errorMessage {
+                    Text(errorMessage)
+                        .font(.system(size: 12, weight: .medium))
+                        .foregroundStyle(.red)
+                }
+            }
 
             HStack(spacing: 8) {
                 TextField("", text: .constant(value))
@@ -130,7 +151,11 @@ struct MainContentView: View {
         conversionStatusMessage = ""
 
         guard !excelPath.isEmpty else {
-            showAlert("Please select an xls file.")
+            showAlert("Please select an XLS or CSV file.")
+            return
+        }
+
+        guard !inputFileIsMissing else {
             return
         }
 
@@ -141,7 +166,7 @@ struct MainContentView: View {
 
         let languageKeys = parsedLanguageKeys()
         guard !languageKeys.isEmpty else {
-            showAlert("Specify the language keys in the Excel file (e.g. en,es,de).")
+            showAlert("Specify the language keys in the spreadsheet (e.g. en,es,de).")
             return
         }
 
@@ -152,10 +177,47 @@ struct MainContentView: View {
                 projectLocalizationDirectory: projectPath.isEmpty ? nil : projectPath,
                 languageKeys: languageKeys
             )
-            let completedAt = statusTimeFormatter.string(from: Date())
-            conversionStatusMessage = "Convert completed at \(completedAt)."
+            let completionDate = Date()
+            let archivedPath = try archiveInputFile(completedAt: completionDate)
+            let completedAt = statusTimeFormatter.string(from: completionDate)
+            conversionStatusMessage = "Convert completed at \(completedAt). Input archived as \(URL(fileURLWithPath: archivedPath).lastPathComponent)."
         } catch {
             showAlert(error.localizedDescription)
+        }
+    }
+
+    private func archiveInputFile(completedAt date: Date) throws -> String {
+        let inputURL = URL(fileURLWithPath: excelPath)
+        let filename = inputURL.deletingPathExtension().lastPathComponent
+        let fileExtension = inputURL.pathExtension
+        let timestamp = archiveTimeFormatter.string(from: date)
+        let directoryURL = inputURL.deletingLastPathComponent()
+        var archivedURL = directoryURL.appendingPathComponent("\(filename)_\(timestamp)")
+        if !fileExtension.isEmpty {
+            archivedURL.appendPathExtension(fileExtension)
+        }
+
+        var duplicateIndex = 2
+        while FileManager.default.fileExists(atPath: archivedURL.path) {
+            archivedURL = directoryURL.appendingPathComponent("\(filename)_\(timestamp)_\(duplicateIndex)")
+            if !fileExtension.isEmpty {
+                archivedURL.appendPathExtension(fileExtension)
+            }
+            duplicateIndex += 1
+        }
+
+        do {
+            try FileManager.default.moveItem(at: inputURL, to: archivedURL)
+            return archivedURL.path
+        } catch {
+            throw NSError(
+                domain: "XLSConvertToString",
+                code: error._code,
+                userInfo: [
+                    NSLocalizedDescriptionKey: "Conversion completed, but the input file could not be archived: \(error.localizedDescription)",
+                    NSUnderlyingErrorKey: error
+                ]
+            )
         }
     }
 
@@ -166,12 +228,16 @@ struct MainContentView: View {
             .filter { !$0.isEmpty }
     }
 
+    private var inputFileIsMissing: Bool {
+        !excelPath.isEmpty && !FileManager.default.fileExists(atPath: excelPath)
+    }
+
     private func selectExcelFile() {
         let panel = NSOpenPanel()
         panel.canChooseFiles = true
         panel.canChooseDirectories = false
         panel.allowsMultipleSelection = false
-        panel.allowedContentTypes = [.spreadsheet]
+        panel.allowedContentTypes = supportedSpreadsheetTypes
 
         if panel.runModal() == .OK {
             excelPath = panel.url?.path ?? ""
@@ -219,27 +285,40 @@ struct MainContentView: View {
 }
 
 struct WindowConfigurationView: NSViewRepresentable {
+    final class Coordinator {
+        var hasClearedInitialFocus = false
+    }
+
+    func makeCoordinator() -> Coordinator {
+        Coordinator()
+    }
+
     func makeNSView(context: Context) -> NSView {
         let view = NSView()
         DispatchQueue.main.async {
-            configureWindow(for: view)
+            configureWindow(for: view, coordinator: context.coordinator)
         }
         return view
     }
 
     func updateNSView(_ nsView: NSView, context: Context) {
         DispatchQueue.main.async {
-            configureWindow(for: nsView)
+            configureWindow(for: nsView, coordinator: context.coordinator)
         }
     }
 
-    private func configureWindow(for view: NSView) {
+    private func configureWindow(for view: NSView, coordinator: Coordinator) {
         guard let window = view.window else { return }
 
         let info = Bundle.main.infoDictionary
         let version = info?["CFBundleShortVersionString"] as? String ?? "1.0"
         let build = info?["CFBundleVersion"] as? String ?? "1"
         window.title = "iOS/MAC App Localization Tool - Version \(version) (Build \(build))"
+
+        if !coordinator.hasClearedInitialFocus {
+            window.makeFirstResponder(nil)
+            coordinator.hasClearedInitialFocus = true
+        }
     }
 }
 
@@ -267,7 +346,7 @@ struct UnusedKeysSheet: View {
             )
 
             pathSection(
-                title: "XLS File:",
+                title: "Spreadsheet File (.xls or .csv):",
                 value: xlsPath,
                 selectAction: selectXLSPath,
                 revealAction: openXLSPath
@@ -338,7 +417,7 @@ struct UnusedKeysSheet: View {
             return
         }
         guard !xlsPath.isEmpty else {
-            showAlert("Please select an XLS file first.")
+            showAlert("Please select an XLS or CSV file first.")
             return
         }
 
@@ -390,7 +469,7 @@ struct UnusedKeysSheet: View {
         panel.canChooseFiles = true
         panel.canChooseDirectories = false
         panel.allowsMultipleSelection = false
-        panel.allowedContentTypes = [.spreadsheet]
+        panel.allowedContentTypes = supportedSpreadsheetTypes
 
         if panel.runModal() == .OK {
             xlsPath = panel.url?.path ?? ""

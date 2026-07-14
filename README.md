@@ -1,10 +1,10 @@
 # XLSConvertToString
 
-XLSConvertToString is a small macOS utility for converting localization tables in `.xls` format into Apple `.strings` files.
+XLSConvertToString is a small macOS utility for converting localization tables in `.xls` or `.csv` format into Apple `.strings` files.
 
 ## What it does
 
-- Converts one Excel `.xls` file into localized `.strings` output
+- Converts one `.xls` or `.csv` file into localized `.strings` output
 - Supports exporting to a standalone folder of `*.strings` files
 - Supports replacing `Localizable.strings` directly inside an existing project’s `<language>.lproj` folders
 - Provides a helper tool to find unused localization keys in a source tree
@@ -17,9 +17,9 @@ XLSConvertToString is a small macOS utility for converting localization tables i
 
 
 
-## Excel format
+## Spreadsheet format
 
-The app expects the first worksheet in the workbook and uses the following column layout:
+The app uses the following column layout:
 
 | Column | Meaning |
 | --- | --- |
@@ -33,6 +33,8 @@ Notes:
 - Empty translation cells are skipped
 - Double quotes in values are escaped automatically
 - Leading and trailing whitespace is trimmed before writing output
+- CSV files must be UTF-8 encoded and follow standard CSV quoting rules. Quoted fields can contain commas, line breaks, and escaped quotes (`""`).
+- XLS remains available during the CSV migration. New localization tables should use CSV.
 
 ## Export modes
 
@@ -77,12 +79,14 @@ The result panel lists the remaining unused keys and shows progress while the sc
 ## Usage
 
 1. Open the app in Xcode and run it as a macOS app.
-2. Select an `.xls` file.
+2. Select an `.xls` or `.csv` file.
 3. Choose either:
    - an output folder for `.strings` files, or
    - a project localization folder to update `<language>.lproj/Localizable.strings`
 4. Enter the language keys in the same order as the translation columns in the spreadsheet.
 5. Click **Convert**.
+
+After a successful conversion, the source spreadsheet is renamed in place with its completion time, for example `translate_20260714-153045.csv`. This preserves a versioned archive and leaves the original filename available for the next CSV export. If a file with the same timestamp already exists, the app adds a numeric suffix instead of overwriting it.
 
 For example, if your spreadsheet uses these translation columns:
 
