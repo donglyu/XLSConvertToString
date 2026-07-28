@@ -30,6 +30,7 @@ struct MainContentView: View {
     @State private var alertMessage: AlertMessage?
     @State private var isShowingUnusedKeysSheet = false
     @State private var conversionStatusMessage = ""
+    @State private var shouldShowInputFileMissingError = false
 
     private let conversionService = LocalizationConversionService()
     private let defaultLanguageKeys = "en,es,de,fr,tr,it,pt-BR"
@@ -55,7 +56,7 @@ struct MainContentView: View {
                 value: excelPath,
                 selectAction: selectExcelFile,
                 revealAction: openExcelLocation,
-                errorMessage: inputFileIsMissing ? "File not found" : nil
+                errorMessage: shouldShowInputFileMissingError ? "File not found" : nil
             )
 
             pathSection(
@@ -155,9 +156,12 @@ struct MainContentView: View {
             return
         }
 
-        guard !inputFileIsMissing else {
+        guard FileManager.default.fileExists(atPath: excelPath) else {
+            shouldShowInputFileMissingError = true
             return
         }
+
+        shouldShowInputFileMissingError = false
 
         guard !stringPath.isEmpty || !projectPath.isEmpty else {
             showAlert("Select at least one export path or project localization path.")
@@ -228,10 +232,6 @@ struct MainContentView: View {
             .filter { !$0.isEmpty }
     }
 
-    private var inputFileIsMissing: Bool {
-        !excelPath.isEmpty && !FileManager.default.fileExists(atPath: excelPath)
-    }
-
     private func selectExcelFile() {
         let panel = NSOpenPanel()
         panel.canChooseFiles = true
@@ -241,6 +241,7 @@ struct MainContentView: View {
 
         if panel.runModal() == .OK {
             excelPath = panel.url?.path ?? ""
+            shouldShowInputFileMissingError = false
         }
     }
 
