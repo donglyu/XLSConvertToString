@@ -4,6 +4,9 @@ import Foundation
     case invalidExcelFile = 1
     case worksheetParsingFailed = 2
     case invalidCSVFile = 3
+    case invalidTranslationAttachmentDirectory = 4
+    case translationAttachmentNotFound = 5
+    case duplicateTranslationAttachment = 6
 }
 
 enum CSVTableReaderError: LocalizedError {
@@ -108,6 +111,91 @@ struct CSVTableReader {
 
 @objcMembers
 final class LocalizationConversionService: NSObject {
+    /// Copies `*.lproj/Localizable.strings` from a translation platform export into a project.
+    /// Files are intentionally replaced as-is; no merge, backup, or source-file archival is performed.
+    func importTranslationAttachments(
+        attachmentDirectory: String,
+        projectLocalizationDirectory: String
+    ) throws -> Int {
+        let fileManager = FileManager.default
+        var isAttachmentDirectory = ObjCBool(false)
+        guard fileManager.fileExists(atPath: attachmentDirectory, isDirectory: &isAttachmentDirectory),
+              isAttachmentDirectory.boolValue else {
+            throw conversionError(
+                code: .invalidTranslationAttachmentDirectory,
+                description: "The translation attachments path is not a directory: \(attachmentDirectory)"
+            )
+        }
+
+        var isProjectDirectory = ObjCBool(false)
+        guard fileManager.fileExists(atPath: projectLocalizationDirectory, isDirectory: &isProjectDirectory),
+              isProjectDirectory.boolValue else {
+            throw conversionError(
+                code: .invalidTranslationAttachmentDirectory,
+                description: "The project localization path is not a directory: \(projectLocalizationDirectory)"
+            )
+        }
+
+        guard let enumerator = fileManager.enumerator(
+            at: URL(fileURLWithPath: attachmentDirectory),
+            includingPropertiesForKeys: [.isRegularFileKey],
+            options: [.skipsHiddenFiles]
+        ) else {
+            throw conversionError(
+                code: .invalidTranslationAttachmentDirectory,
+                description: "Unable to scan translation attachments directory: \(attachmentDirectory)"
+            )
+        }
+
+        var sourceFilesByLanguageDirectory: [String: URL] = [:]
+        for case let fileURL as URL in enumerator {
+            guard fileURL.lastPathComponent == "Localizable.strings",
+                  fileURL.deletingLastPathComponent().pathExtension == "lproj" else {
+                continue
+            }
+
+            let languageDirectory = fileURL.deletingLastPathComponent().lastPathComponent
+            guard sourceFilesByLanguageDirectory[languageDirectory] == nil else {
+                throw conversionError(
+                    code: .duplicateTranslationAttachment,
+                    description: "Multiple translation attachments were found for \(languageDirectory)/Localizable.strings."
+                )
+            }
+            sourceFilesByLanguageDirectory[languageDirectory] = fileURL
+        }
+
+        guard !sourceFilesByLanguageDirectory.isEmpty else {
+            throw conversionError(
+                code: .translationAttachmentNotFound,
+                description: "No *.lproj/Localizable.strings files were found in the translation attachments directory."
+            )
+        }
+
+        let projectURL = URL(fileURLWithPath: projectLocalizationDirectory)
+        for languageDirectory in sourceFilesByLanguageDirectory.keys.sorted() {
+            guard let sourceURL = sourceFilesByLanguageDirectory[languageDirectory] else { continue }
+            let destinationDirectory = projectURL.appendingPathComponent(languageDirectory, isDirectory: true)
+            let destinationURL = destinationDirectory.appendingPathComponent("Localizable.strings")
+
+            do {
+                try fileManager.createDirectory(at: destinationDirectory, withIntermediateDirectories: true)
+                let sourceData = try Data(contentsOf: sourceURL)
+                try sourceData.write(to: destinationURL, options: .atomic)
+            } catch {
+                throw NSError(
+                    domain: "LocalizationConversionService",
+                    code: error._code,
+                    userInfo: [
+                        NSLocalizedDescriptionKey: "Failed to replace \(languageDirectory)/Localizable.strings: \(error.localizedDescription)",
+                        NSUnderlyingErrorKey: error
+                    ]
+                )
+            }
+        }
+
+        return sourceFilesByLanguageDirectory.count
+    }
+
     func convert(
         excelPath: String,
         stringOutputDirectory: String?,
